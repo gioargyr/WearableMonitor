@@ -130,5 +130,6 @@ dmypy.json
 
 # More
 *.iml
+.idea
 .idea/
 .idea/*
