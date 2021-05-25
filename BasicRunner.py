@@ -25,22 +25,24 @@ class Main:
         # Lists to be filed by the algorithms
         # self.datapoints = []
 
-        #self.run_analytics(self.multi_samples[0])
-        #self.run_analytics(self.multi_samples[1])
+        accX_windowed = self.windowing(self.multi_samples[0])
+        stat_feats = self.run_analytics(accX_windowed)
         #self.run_analytics(self.multi_samples[2])
 
-        self.check_relation(self.multi_samples[0])
+        self.check_relation(stat_feats)
 
 
     """
-
+    It gets the univariate time-series and returns lists within a list.
+    Each included list has only the values of one window!
+    Window's width and overlap's level are defined in the .properties file.
     """
-    def run_analytics(self, univ_ts):
+    def windowing(self, univ_ts):
 
         window = int(self.properties_reader.window)
         overlap = float(self.properties_reader.overlap)
 
-        grouped_values = []
+        ts_windowed = []
         i = 0
         while i < len(univ_ts) - 1:
             start = i
@@ -55,67 +57,109 @@ class Main:
                 #print(str(start) + "\t" + str(end) + "\telse")
                 for i in range(start, end):
                     group.append(univ_ts[i].get_value())
-                grouped_values.append(group)
+                ts_windowed.append(group)
                 break
-            grouped_values.append(group)
+            ts_windowed.append(group)
             #print(str(start) + "\t" + str(end))
             i = round(end - window * overlap)
 
-        # for item in grouped_values:
-        #     print(len(item))
+        return ts_windowed
+
+
+    """
+    It calculates analytics on windowed time series.
+    It returns one list which has each statistical feature in one list.
+    """
+    def run_analytics(self, ts_windowed):
 
         means = []
         stds = []
         quart1 = []
         quart3 = []
-        for g in grouped_values:
-            means.append(np.mean(g))
-            stds.append(np.std(g))
-            quart1.append((np.quantile(g, 0.25)))
-            quart3.append((np.quantile(g, 0.75)))
+        for win in ts_windowed:
+            means.append(np.mean(win))
+            stds.append(np.std(win))
+            quart1.append((np.quantile(win, 0.25)))
+            quart3.append((np.quantile(win, 0.75)))
 
         self.vis_grouped_analytics(means, "mean")
         self.vis_grouped_analytics(stds, "std")
         self.vis_grouped_analytics(quart1, "q1")
         self.vis_grouped_analytics(quart3, "q3")
 
+        return [means, stds, quart1, quart3]
+
 
 
     """
 
     """
-    def check_relation(self, univ_ts):
+    def check_relation(self, stat_feats):
 
-        window = int(self.properties_reader.window)
-        overlap = float(self.properties_reader.overlap)
+        for i in range(1):
+            stat_feat = stat_feats[i]
 
-        t_results = []
-        i = 0
-        while i < len(univ_ts) - 1:
-            #print(i)
-            start = i
-            end = start + window
-            #print(str(start) + "\t" + str(end))
-            group = []
-            if end < len(univ_ts):
-                for i in range(start, end):
-                    group.append(univ_ts[i].get_value())
-                print(str(start) + "\t" + str(end))
-                ttest_res = st.ttest_1samp(group, univ_ts[end].get_value())
-                t_results.append(ttest_res.pvalue)
-            # else:
-            #     end = len(univ_ts)
-            #     #print(str(start) + "\t" + str(end) + "\telse")
-            #     for i in range(start, end):
-            #         group.append(univ_ts[i].get_value())
-            #     grouped_values.append(group)
-            #     break
-            #grouped_values.append(group)
-            #print(str(start) + "\t" + str(end))
-            i = start + 1
+            ttest_results = []
+            j = 0
+            while j < len(stat_feat) - 1:
+                start = j
+                end = start + 5
+                group = []
+                if end < len(stat_feat):
+                    print("\n" + str(start) + "\t" + str(end))
+                    for k in range(start, end):
+                        group.append(stat_feat[k])
+                    ttest_res = st.ttest_1samp(group, stat_feat[end])
+                    ttest_results.append(ttest_res.pvalue)
+                    print(group)
+                    print(stat_feat[end])
+                    print(ttest_res.pvalue)
+                else:
+                    print("Stat feat length = \t" + str(len(stat_feat)))
+                    for l in range(start, len(stat_feat)):
+                        print(stat_feat[l])
+                    break
 
-        for item in t_results:
-            print(item)
+                j = start + 1
+
+        print("\nttest_results length = \t" + str(len(ttest_results)))
+        # for item in ttest_results:
+        #     print(item)
+
+        # self.vis_grouped_analytics(stat_feat, "mean")
+        # self.vis_grouped_analytics(ttest_results, "ttest")
+
+
+
+
+
+        # t_results = []
+        # i = 0
+        # while i < len(univ_ts) - 1:
+        #     #print(i)
+        #     start = i
+        #     end = start + window
+        #     #print(str(start) + "\t" + str(end))
+        #     group = []
+        #     if end < len(univ_ts):
+        #         for i in range(start, end):
+        #             group.append(univ_ts[i].get_value())
+        #         print(str(start) + "\t" + str(end))
+        #         ttest_res = st.ttest_1samp(group, univ_ts[end].get_value())
+        #         t_results.append(ttest_res.pvalue)
+        #     # else:
+        #     #     end = len(univ_ts)
+        #     #     #print(str(start) + "\t" + str(end) + "\telse")
+        #     #     for i in range(start, end):
+        #     #         group.append(univ_ts[i].get_value())
+        #     #     grouped_values.append(group)
+        #     #     break
+        #     #grouped_values.append(group)
+        #     #print(str(start) + "\t" + str(end))
+        #     i = start + 1
+        #
+        # for item in t_results:
+        #     print(item)
 
 
 
