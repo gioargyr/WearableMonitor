@@ -36,6 +36,7 @@ class Main:
     It gets the univariate time-series and returns lists within a list.
     Each included list has only the values of one window!
     Window's width and overlap's level are defined in the .properties file.
+    CHECKED, IT WORKS FINE!!!
     """
     def windowing(self, univ_ts):
 
@@ -69,20 +70,24 @@ class Main:
     """
     It calculates analytics on windowed time series.
     It returns one list which has each statistical feature in one list.
+    Pretty neat. CHECKED and works fine
     """
     def run_analytics(self, ts_windowed):
 
         means = []
+        medians = []
         stds = []
         quart1 = []
         quart3 = []
         for win in ts_windowed:
             means.append(np.mean(win))
+            medians.append(np.median(win))
             stds.append(np.std(win))
             quart1.append((np.quantile(win, 0.25)))
             quart3.append((np.quantile(win, 0.75)))
 
         self.vis_grouped_analytics(means, "mean")
+        self.vis_grouped_analytics(medians, "median")
         self.vis_grouped_analytics(stds, "std")
         self.vis_grouped_analytics(quart1, "q1")
         self.vis_grouped_analytics(quart3, "q3")
@@ -178,11 +183,13 @@ class Main:
         fig, ax = plt.subplots(figsize=(18, 6))
         color1 = 'tab:blue'
         color2 = 'tab:red'
-        ax.set_xlabel("Timestamp")
-        ax.set_ylabel("Sample Value")
+        ax.set_xlabel("Window Number")
+        ax.set_ylabel(name)
         ax.plot(x_orig, y_orig, color=color1, label="Original")
 
         filename, file_extension = os.path.splitext(self.dataset_filepath)
+
+        plt.title("Sliding window width =  " + self.properties_reader.window + ", Overlap = " + self.properties_reader.overlap)
 
         # if not self.isFiltering:
         #     plt.title("AdaM @ " + os.path.basename(filename) + ", " + str(len(self.samples)) +
